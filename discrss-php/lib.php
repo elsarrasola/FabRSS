@@ -20,7 +20,8 @@ function get_xml_data($url, $limit_items = -1) {
                         $feed_new_items[] = array(
                             "title" => (string) $item->title,
                             "description" => (string) $item->description,
-                            "link" => (string) $item->link
+                            "link" => (string) $item->link,
+                            "tms" => (int) strtotime($item->pubDate),
                         );
                         if($limit_items > 0)
                         {
@@ -132,17 +133,26 @@ function check_for_updates($client, $limit_items) {
     }
 }
 
+function clean_html($html_content) {
+    // remove all the unusable tags exept the paragraphs
+    $paragraphs = strip_tags($html_content, "<p><a>");
+    
+    // remove the tags but keep the text between
+    $cleaned_text = preg_replace("/<(\/|)(a|p)[^>]{0,}>/im", '', $paragraphs);
+    return html_entity_decode($cleaned_text);
+}
+
 function publish($discord_obj, $channel_id, $item_to_publish) {
     $feed = new Feed();
     $channel = $discord_obj->getChannel($channel_id);
     $msg_builder = MessageBuilder::new();
-    $msg_builder->setContent("Nouvelle publication sur ".$item_to_publish["title"]);
     if($channel->type == 0) {
         // simple text channel
         $msg_builder->addEmbed(array(
             "title" => $item_to_publish["title"],
             "type" => "article",
-            "description" => $item_to_publish["description"],
+            "description" => clean_html($item_to_publish["description"]),
+            "timestamp" => date(DATE_ISO8601, $item_to_publish["tms"]),
             "url" => $item_to_publish["link"],
             "color" => 16741120 // Orange
         ));
@@ -151,12 +161,11 @@ function publish($discord_obj, $channel_id, $item_to_publish) {
         // forum channel or media channel
 
         // TODO : Get categories to attache tags
-        // TODO : Get content of the article to write it correctly IN the thread post
         $new_thread_options = array(
             "name" => $item_to_publish["title"],
             "auto_archive_duration" => 60, // minutes
             "message" => MessageBuilder::new()->setContent(
-                $item_to_publish["description"]."\n".$item_to_publish["link"]
+                clean_html($item_to_publish["description"])." ".$item_to_publish["link"]
             ),
         );
         $channel->startThread($new_thread_options);
