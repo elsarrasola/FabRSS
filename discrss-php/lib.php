@@ -132,6 +132,16 @@ function check_for_updates($client, $limit_items) {
     }
 }
 
+function clean_html($html_content) {
+    // remove all the unusable tags exept the paragraphs
+    $paragraphs = strip_tags($html_content, "<p>");
+    // remove the opening tags
+    $without_opening_tag = str_replace("<p>", '', $paragraphs);
+    // replacing closing tags by \n to mark the end of the paragraph
+    $cleaned_text = str_replace("</p>", "\n", $without_opening_tag);
+    return html_entity_decode($cleaned_text);
+}
+
 function publish($discord_obj, $channel_id, $item_to_publish) {
     $feed = new Feed();
     $channel = $discord_obj->getChannel($channel_id);
@@ -151,12 +161,11 @@ function publish($discord_obj, $channel_id, $item_to_publish) {
         // forum channel or media channel
 
         // TODO : Get categories to attache tags
-        // TODO : Get content of the article to write it correctly IN the thread post
         $new_thread_options = array(
             "name" => $item_to_publish["title"],
             "auto_archive_duration" => 60, // minutes
             "message" => MessageBuilder::new()->setContent(
-                $item_to_publish["description"]."\n".$item_to_publish["link"]
+                clean_html($item_to_publish["description"])." ".$item_to_publish["link"]
             ),
         );
         $channel->startThread($new_thread_options);
