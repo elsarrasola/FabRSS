@@ -135,11 +135,10 @@ function check_for_updates($client, $limit_items) {
 
 function clean_html($html_content) {
     // remove all the unusable tags exept the paragraphs
-    $paragraphs = strip_tags($html_content, "<p>");
-    // remove the opening tags
-    $without_opening_tag = str_replace("<p>", '', $paragraphs);
-    // replacing closing tags by \n to mark the end of the paragraph
-    $cleaned_text = str_replace("</p>", "\n", $without_opening_tag);
+    $paragraphs = strip_tags($html_content, "<p><a>");
+    
+    // remove the tags but keep the text between
+    $cleaned_text = preg_replace("/<(\/|)(a|p)[^>]{0,}>/im", '', $paragraphs);
     return html_entity_decode($cleaned_text);
 }
 
@@ -147,7 +146,6 @@ function publish($discord_obj, $channel_id, $item_to_publish) {
     $feed = new Feed();
     $channel = $discord_obj->getChannel($channel_id);
     $msg_builder = MessageBuilder::new();
-    // $msg_builder->setContent("");
     if($channel->type == 0) {
         // simple text channel
         $msg_builder->addEmbed(array(
