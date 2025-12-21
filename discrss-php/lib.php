@@ -20,7 +20,8 @@ function get_xml_data($url, $limit_items = -1) {
                         $feed_new_items[] = array(
                             "title" => (string) $item->title,
                             "description" => (string) $item->description,
-                            "link" => (string) $item->link
+                            "link" => (string) $item->link,
+                            "tms" => (int) strtotime($item->pubDate),
                         );
                         if($limit_items > 0)
                         {
@@ -146,13 +147,14 @@ function publish($discord_obj, $channel_id, $item_to_publish) {
     $feed = new Feed();
     $channel = $discord_obj->getChannel($channel_id);
     $msg_builder = MessageBuilder::new();
-    $msg_builder->setContent("Nouvelle publication sur ".$item_to_publish["title"]);
+    // $msg_builder->setContent("");
     if($channel->type == 0) {
         // simple text channel
         $msg_builder->addEmbed(array(
             "title" => $item_to_publish["title"],
             "type" => "article",
-            "description" => $item_to_publish["description"],
+            "description" => clean_html($item_to_publish["description"]),
+            "timestamp" => date(DATE_ISO8601, $item_to_publish["tms"]),
             "url" => $item_to_publish["link"],
             "color" => 16741120 // Orange
         ));
