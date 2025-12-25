@@ -1,5 +1,6 @@
 #include <dpp/dpp.h>
-#include <env.h>
+#include "env.h"
+#include "commands.h"
 
 int main() {
     dpp::cluster bot(env::BOT_TOKEN);
@@ -8,7 +9,7 @@ int main() {
 
     bot.on_slashcommand([](const dpp::slashcommand_t& event){
         if(event.command.get_command_name() == "pingcpp") {
-            event.reply("Pong !");
+            event.reply(commands::ping());
         }
     });
 
